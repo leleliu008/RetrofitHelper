@@ -21,6 +21,8 @@ object Downloader {
 
     private val downloadAPI: DownloadAPI = RetrofitRequest.getRetrofit().create(DownloadAPI::class.java)
 
+    var downloadInfoPersistent: DownloadInfoPersistent = DownloadInfoPersistent2File()
+
     /**
      * 异步下载资源，并保存到指定文件
      *
@@ -43,7 +45,7 @@ object Downloader {
      */
     @Throws(IOException::class)
     fun downloadSync(url: String, desFile: File): DownloadInfo {
-        val downloadInfo = getDownloadInfoFromFile(desFile)
+        val downloadInfo = downloadInfoPersistent.read(desFile)
         return handleResponse(request(url, desFile, downloadInfo), desFile, downloadInfo, 0)
     }
 
@@ -154,19 +156,25 @@ object Downloader {
                 throw RuntimeException("重定向的次数过多")
             }
         } else if (httpCode == 304) {
-            return downloadInfo ?: getDownloadInfoFromFile(desFile) ?: DownloadInfo()
+            return downloadInfo ?: downloadInfoPersistent.read(desFile) ?: DownloadInfo()
         } else if (httpCode == 206) {
             OKHttpRequest.saveFile(response.raw(), response.body()!!, desFile, desFile.length(), null)
-            return downloadInfo ?: getDownloadInfoFromFile(desFile) ?: DownloadInfo()
+            return downloadInfo ?: downloadInfoPersistent.read(desFile) ?: DownloadInfo()
         } else if (httpCode == 200) {
-            val eTag = response.headers().get("ETag")
-            val lastModified = response.headers().get("Last-Modified")
+            val responseHeaders = response.headers()
+            val eTag = responseHeaders.get("ETag")
+            val lastModified = responseHeaders.get("Last-Modified")
+            val contentLengthStr = responseHeaders.get("Content-Length")
             var contentLength: Long
-            try {
-                contentLength = java.lang.Long.parseLong(response.headers().get("Content-Length"))
-            } catch (e: Exception) {
+            if (contentLengthStr == null || contentLengthStr == "") {
                 contentLength = 0
-                e.printStackTrace()
+            } else {
+                try {
+                    contentLength = contentLengthStr.toLong()
+                } catch (e: Exception) {
+                    contentLength = 0
+                    e.printStackTrace()
+                }
             }
 
             //保存这个文件下载相关的元数据
@@ -179,7 +187,7 @@ object Downloader {
                 }
             }
 
-            File("${desFile.absolutePath}.meta").writeText(newDownloadInfo.toJSON(), Charsets.UTF_8)
+            downloadInfoPersistent.write(desFile, newDownloadInfo)
 
             //写文件，无论是否发生异常，一定要关闭文件流，如果发生了异常，直接抛给上层，上层处理即可
             var bufferedSink: BufferedSink? = null
@@ -197,17 +205,5 @@ object Downloader {
         //服务器上的资源没有变化，可以使用本地缓存
         //出现了异常，抛出异常，通知上层即可
         throw HttpException(response)
-    }
-
-    private fun getDownloadInfoFromFile(desFile: File): DownloadInfo? {
-        val filePath = desFile.absolutePath
-        val metaFile = File("$filePath.meta")
-        return if (metaFile.exists()) {
-            val jsonObject = JSONObject(metaFile.readText(Charsets.UTF_8))
-            val lastModified = jsonObject.getString("lastModified")
-            val totalByte = jsonObject.getLong("totalByte")
-            val eTag = jsonObject.getString("eTag")
-            DownloadInfo(filePath, lastModified, totalByte, eTag, false)
-        } else null
     }
 }

@@ -20,7 +20,7 @@ class FileConverterFactory : Converter.Factory() {
             var contentTypeStr = (parameterAnnotations?.filter { it is ContentType }?.takeIf { it.size > 0 }?.get(0) as? ContentType)?.value?.takeIf { it != null && "" != it }
                 ?: "application/octet-stream"
             val mediaType = MediaType.parse(contentTypeStr)
-            return Converter { RequestBody.create(mediaType, it) }
+            Converter { RequestBody.create(mediaType, it) }
         } else null
     }
 }
