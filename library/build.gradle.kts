@@ -1,21 +1,31 @@
-import java.util.Properties
+import com.fpliu.gradle.bintrayUploadAndroidExtension
 
 buildscript {
     repositories {
         jcenter()
     }
     dependencies {
-        //用于上传maven包到jCenter中
-        //https://github.com/bintray/gradle-bintray-plugin
-        classpath("com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3")
+        //对android-maven-gradle-plugin和gradle-bintray-plugin两个插件的包装、简化插件
+        //https://github.com/leleliu008/BintrayUploadAndroidGradlePlugin
+        classpath("com.fpliu:BintrayUploadAndroidGradlePlugin:1.0.0")
     }
 }
 
+apply {
+    plugin("com.fpliu.bintray.upload.android")
+}
+
 plugins {
-    kotlin("jvm")
-    id("com.jfrog.bintray").version("1.7.3")
     java
     maven
+
+    //Kotlin编译的插件
+    //http://kotlinlang.org/docs/reference/using-gradle.html
+    kotlin("jvm").version("1.2.21")
+
+    //用于上传maven包到jCenter中
+    //https://github.com/bintray/gradle-bintray-plugin
+    id("com.jfrog.bintray").version("1.7.3")
 }
 
 java {
@@ -46,100 +56,21 @@ dependencies {
 
 val rootProjectName: String = rootProject.name
 
-base {
-    archivesBaseName = rootProjectName
-}
-
 // 这里是groupId,必须填写,一般填你唯一的包名
 group = "com.fpliu"
 
 //这个是版本号，必须填写
 version = "1.0.0"
 
-// 项目的主页,这个是说明，可随便填
-val siteUrl = "https://github.com/leleliu008/$rootProjectName"
+bintrayUploadAndroidExtension {
+    developerName = "leleliu008"
+    developerEmail = "leleliu008@gamil.com"
 
-// GitHub仓库的URL,这个是说明，可随便填
-val gitUrl = "https://github.com/leleliu008/$rootProjectName"
+    projectSiteUrl = "https://github.com/$developerName/$rootProjectName"
+    projectGitUrl = "https://github.com/$developerName/$rootProjectName"
 
-
-tasks {
-    "install"(Upload::class) {
-        repositories {
-            withConvention(MavenRepositoryHandlerConvention::class) {
-                mavenInstaller {
-                    configuration = configurations.getByName("archives")
-                    pom.project {
-                        withGroovyBuilder {
-                            "packaging"("jar")
-                            "artifactId"(rootProjectName)
-                            "name"(rootProjectName)
-                            "url"(siteUrl)
-                            "licenses" {
-                                "license" {
-                                    "name"("The Apache Software License, Version 2.0")
-                                    "url"("service://www.apache.org/licenses/LICENSE-2.0.txt")
-                                }
-                            }
-                            "developers" {
-                                "developer" {
-                                    "id"("fpliu")
-                                    "name"("fpliu")
-                                    "email"("leleliu008@gmail.com")
-                                }
-                            }
-                            "scm" {
-                                "connection"(gitUrl)
-                                "developerConnection"(gitUrl)
-                                "url"(siteUrl)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// 生成jar包的task
-val sourcesJarTask = task("sourcesJar", Jar::class) {
-    from(java.sourceSets["main"].java.srcDirs)
-    baseName = rootProjectName
-    classifier = "sources"
-}
-
-// 生成jarDoc的task
-val javadocTask = task("javadoc_", Javadoc::class) {
-    source(java.sourceSets["main"].java.srcDirs)
-//    classpath += project.files(java.)
-    isFailOnError = false
-}
-
-// 生成javaDoc的jar
-val javadocJarTask = task("javadocJar", Jar::class) {
-    from(javadocTask.destinationDir)
-    baseName = rootProjectName
-    classifier = "javadoc"
-}.dependsOn(javadocTask)
-
-artifacts {
-    add("archives", javadocJarTask)
-    add("archives", sourcesJarTask)
-}
-
-val properties = Properties().apply { load(project.rootProject.file("local.properties").inputStream()) }
-bintray {
-    user = properties.getProperty("bintray.user")
-    key = properties.getProperty("bintray.apikey")
-
-    setConfigurations("archives")
-    pkg = PackageConfig().apply {
-        userOrg = "fpliu"
-        repo = "newton"
-        name = rootProjectName
-        websiteUrl = siteUrl
-        vcsUrl = gitUrl
-        setLicenses("Apache-2.0")
-        publish = true
-    }
+    bintrayUserName = "fpliu"
+    bintrayOrganizationName = "fpliu"
+    bintrayRepositoryName = "newton"
+    bintrayApiKey = "xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 }
