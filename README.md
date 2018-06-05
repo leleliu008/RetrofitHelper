@@ -68,9 +68,10 @@ Downloader.downloadSync("https://www.baidu.com/", File("/Users/leleliu008/baidu.
 
 ## 4、注意
 <br>
-该库使用了<code>lambda</code>表达式，所以，您用在<code>Android</code>项目上的时候，必须设置要编译成JVM1.8版本的目标代码。
+该库使用了<code>lambda</code>表达式，所以，您用在<code>Android</code>项目上的时候，必须设置要编译成<code>JVM1.8</code>版本的目标代码。
 <br><br>
 如果您的<code>gradle</code>配置脚本使用的是<code>kotlin</code>语言，在<code>build.gradle.kts</code>中如下配置：
+<br>
 
 ```
 android {
@@ -87,6 +88,7 @@ android {
 
 ```
 android {
+    ...
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
