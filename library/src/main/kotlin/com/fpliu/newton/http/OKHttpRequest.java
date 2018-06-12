@@ -234,7 +234,9 @@ public final class OKHttpRequest {
     public static void asyncDownload(String url, String authorization, String desFilePath, boolean needContinue, final ProgressCallback progressCallback) {
         if (isEmpty(desFilePath)) {
             FileNotFoundException exception = new FileNotFoundException("文件路径不能为空");
-            if (progressCallback != null) {
+            if (progressCallback == null) {
+                logger.log("", exception);
+            } else {
                 progressCallback.onFailure(null, exception);
             }
             return;
@@ -251,7 +253,9 @@ public final class OKHttpRequest {
                 call.enqueue(new Callback() {
                     @Override
                     public void onFailure(Call call, IOException e) {
-                        if (progressCallback != null) {
+                        if (progressCallback == null) {
+                            logger.log("", e);
+                        } else {
                             progressCallback.onFailure(call, e);
                         }
                     }
@@ -270,6 +274,8 @@ public final class OKHttpRequest {
             @Override
             public void onFailure(Call call, IOException e) {
                 if (progressCallback == null) {
+                    logger.log("", e);
+                } else {
                     progressCallback.onFailure(call, e);
                 }
             }
@@ -300,13 +306,17 @@ public final class OKHttpRequest {
                 mappedBuffer.put(buffer, 0, length);
 
                 if (progressCallback == null) {
-                    logger.log("asyncDownload() currentLength = " + currentLength + ", contentLength = " + contentLength, null);
+                    logger.log("saveFile() currentLength = " + currentLength + ", contentLength = " + contentLength, null);
                 } else {
                     progressCallback.onProgress(currentLength, contentLength);
                 }
             }
         } catch (IOException e) {
-            progressCallback.onFailure(null, e);
+            if (progressCallback == null) {
+                logger.log("", e);
+            } else {
+                progressCallback.onFailure(null, e);
+            }
         } finally {
             try {
                 inputStream.close();
@@ -317,7 +327,11 @@ public final class OKHttpRequest {
                     randomAccessFile.close();
                 }
             } catch (IOException e) {
-                progressCallback.onFailure(null, e);
+                if (progressCallback == null) {
+                    logger.log("", e);
+                } else {
+                    progressCallback.onFailure(null, e);
+                }
             }
         }
     }
