@@ -25,7 +25,7 @@ class StringConverterFactory : Converter.Factory() {
 
     override fun responseBodyConverter(type: Type?, annotations: Array<Annotation>?, retrofit: Retrofit?): Converter<ResponseBody, String>? {
         return if (String::class.java == type) {
-            Converter { responseBody -> responseBody.string() }
+            Converter { it.string() }
         } else null
     }
 }

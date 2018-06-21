@@ -76,7 +76,13 @@ class LogInterceptor(var logger: ((message: String) -> Unit)? = null) : Intercep
 
         stringBuilder.append("--------------------------------------------------\n")
 
-        val response = chain.proceed(request)
+        val response: Response
+        try {
+            response = chain.proceed(request)
+        } catch (e: Exception) {
+            throw RuntimeException(stringBuilder.toString(), e)
+        }
+
         stringBuilder.append("HTTP/1.1 ").append(response.code()).append(" ").append(response.message()).append("\n")
                 .append(response.headers().toString())
 

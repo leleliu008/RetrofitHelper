@@ -18,13 +18,21 @@ abstract class RequestInterceptor : Interceptor {
         return if (filter(request)) {
             val newRequestBuilder = request.newBuilder()
             config(request, newRequestBuilder)
-            chain.proceed(newRequestBuilder.build())
+            proceed(chain, newRequestBuilder.build())
         } else {
-            chain.proceed(request)
+            proceed(chain, request)
         }
     }
 
     open fun filter(request: Request): Boolean = true
 
     abstract fun config(originRequest: Request, newRequestBuilder: Request.Builder)
+
+    private fun proceed(chain: Interceptor.Chain, request: Request): Response {
+        try {
+            return chain.proceed(request)
+        } catch (e: Exception) {
+            throw RuntimeException("${request.method()} ${request.url().uri()}", e)
+        }
+    }
 }

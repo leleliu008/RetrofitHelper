@@ -7,7 +7,6 @@ import io.reactivex.schedulers.Schedulers
 import okhttp3.ResponseBody
 import okio.BufferedSink
 import okio.Okio
-import org.json.JSONObject
 import retrofit2.HttpException
 import retrofit2.Response
 import java.io.File
